@@ -11,7 +11,7 @@ func Uint32ToBytes(i uint32) []byte {
 	return b[:]
 }
 func Hash(data []byte) []byte {
-	h := sha256.Sum256([]byte(data))
+	h := sha256.Sum256(data)
 	return h[:]
 }
 func CalcTxRoot(txs []*Transaction) []byte {

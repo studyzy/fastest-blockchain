@@ -9,11 +9,16 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"time"
 )
 
 var TOTAL_TX = uint32(1000000)
 
 func main() {
+	testCase2()
+}
+
+func testCase1() {
 	GenerateMemKey()
 
 	txPool := NewTxPool()
@@ -42,6 +47,42 @@ func main() {
 	core.GenerateBlock()
 
 }
+
+//预先产生好所有的Tx并签名，然后以最快速度放入TxPool
+func testCase2() {
+	GenerateMemKey()
+
+	txPool := NewTxPool()
+
+	store := NewStore()
+	core := NewCore(txPool, store)
+	//不断产生新交易
+	net := NewNetwork(func(msg []byte) {
+		//网络收到消息后反序列化出Tx，验证签名通过，并放入TxPool
+		tx := &Transaction{}
+		tx.Unmarshal(msg)
+		if VerifyTx(tx) == nil {
+			txPool.AddTx(tx)
+		}
+	})
+	//客户端产生新交易并放入网络模块
+	fmt.Println("Prepare tx...")
+	start := time.Now()
+	txs := GenerateTxs(TOTAL_TX)
+	fmt.Printf("Generated %d tx, spend:%v\n", TOTAL_TX, time.Since(start))
+	go func() {
+		for i := uint32(0); i < TOTAL_TX; i++ {
+			tx := txs[i]
+			txMsg, _ := tx.Marshal()
+			go net.SendMessage(txMsg)
+		}
+	}()
+	//产块节点核心引擎不断产生新区块
+
+	core.GenerateBlock()
+
+}
+
 func GenerateMemKey() error {
 	priv, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	privateKey = priv

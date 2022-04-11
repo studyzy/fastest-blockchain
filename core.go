@@ -34,7 +34,7 @@ func (core *Core) GenerateBlock() {
 			//更新变量
 			preHeight++
 			preHash = newBlock.Header.BlockHash
-			fmt.Printf("Generate new block[%d] tx count=%d, cost:%v, TPS:%v\n", newBlock.Header.BlockHeight,
+			fmt.Printf("Generate new block[%d] tx count= %d, cost: %v, TPS: %v\n", newBlock.Header.BlockHeight,
 				len(txs), time.Since(start), float64(len(txs))/time.Since(start).Seconds())
 			start = time.Now()
 		}
