@@ -1,0 +1,63 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+Copyright (C) THL A29 Limited, a Tencent company. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+option go_package = "main";
+
+package main;
+
+
+// Block definition
+message Block {
+    // header of the block
+    BlockHeader header = 1;
+
+    // transaction list in this block
+    repeated Transaction txs = 2;
+}
+
+
+// header of the block
+message BlockHeader {
+    // block height
+    uint64 block_height = 1;
+
+    // block hash (block identifier)
+    bytes block_hash = 2;
+
+    // previous block hash
+    bytes pre_block_hash = 3;
+
+    // merkle root of transactions
+    // used to verify the existence of this transactions
+    bytes tx_root = 4;
+
+    // the time stamp of the block
+    int64 block_timestamp = 5;
+
+    // proposal node identifier
+    bytes proposer = 6;
+
+    // signature of proposer
+    bytes signature = 7;
+}
+
+// a transaction
+message Transaction {
+    // payload
+    bytes payload = 1;
+
+    // sender account
+    bytes sender = 2;
+
+    // signature of sender
+    bytes signature = 3;
+
+    // tx hash
+    bytes tx_hash = 4;
+}
