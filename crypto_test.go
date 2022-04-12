@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -14,8 +15,8 @@ import (
 )
 
 var msg = "HelloWorld"
-var THREAD = 40
-var COUNT = 10000
+var THREAD = runtime.NumCPU()
+var COUNT = 100000
 
 func TestSignVerify(t *testing.T) {
 
@@ -42,7 +43,7 @@ func TestP256(t *testing.T) {
 			for i := 0; i < COUNT; i++ {
 				hash := sha256.Sum256([]byte(msg))
 				b := ecdsa.VerifyASN1(pub, hash[:], sign)
-				require.Nil(t, err)
+				//require.Nil(t, err)
 				require.True(t, b)
 			}
 			t.Logf("CPU[%d] verify count=%d, cost:%v", c, COUNT, time.Since(start))

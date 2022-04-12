@@ -15,7 +15,7 @@ func TestGenerateTxs(t *testing.T) {
 	for cpu := 0; cpu < THREAD; cpu++ {
 		go func(c int) {
 			defer wg.Done()
-			txBatch = append(txBatch, GenerateTxs(uint32(COUNT)))
+			txBatch = append(txBatch, GenerateTxs(COUNT))
 		}(cpu)
 	}
 	wg.Wait()

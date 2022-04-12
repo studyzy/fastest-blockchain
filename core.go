@@ -27,6 +27,10 @@ func (core *Core) GenerateBlock() {
 
 			//从交易池获取未打包交易
 			txs := core.txpool.FetchTxs()
+			if len(txs) == 0 {
+				fmt.Printf("no tx in pool")
+				return
+			}
 			//产生新区块
 			newBlock := GenerateBlock(preHeight+1, preHash, txs)
 			//保存新区块
