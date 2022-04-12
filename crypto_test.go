@@ -18,10 +18,6 @@ var msg = "HelloWorld"
 var THREAD = runtime.NumCPU()
 var COUNT = 100000
 
-func TestSignVerify(t *testing.T) {
-
-}
-
 func TestP256(t *testing.T) {
 	h := sha256.Sum256([]byte(msg))
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

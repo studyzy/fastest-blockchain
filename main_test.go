@@ -27,8 +27,9 @@ func TestGenerateTxs(t *testing.T) {
 		go func(c int) {
 			defer wg.Done()
 			txs := txBatch[c]
-			if VerifyTxs(txs) != nil {
-				t.Fail()
+			//txs[0].Payload = []byte{123} //wrong data
+			if err := VerifyTxs(txs); err != nil {
+				t.Fatal(err.Error())
 			}
 		}(cpu)
 	}
