@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"runtime"
+	"sync"
 	"time"
 )
 
-var TOTAL_TX = uint32(1000000)
+var TOTAL_TX = 1000000
 
 func main() {
 	testCase2()
@@ -36,8 +38,8 @@ func testCase1() {
 	})
 	//客户端不断产生新交易并放入网络模块
 	go func() {
-		for i := uint32(0); i < TOTAL_TX; i++ {
-			tx := GenerateTx(i)
+		for i := 0; i < TOTAL_TX; i++ {
+			tx := GenerateTx(uint32(i))
 			txMsg, _ := tx.Marshal()
 			net.SendMessage(txMsg)
 		}
@@ -71,7 +73,7 @@ func testCase2() {
 	txs := GenerateTxs(TOTAL_TX)
 	fmt.Printf("Generated %d tx, spend:%v\n", TOTAL_TX, time.Since(start))
 	go func() {
-		for i := uint32(0); i < TOTAL_TX; i++ {
+		for i := 0; i < TOTAL_TX; i++ {
 			tx := txs[i]
 			txMsg, _ := tx.Marshal()
 			go net.SendMessage(txMsg)
@@ -112,21 +114,32 @@ func GenerateTx(i uint32) *Transaction {
 	tx.TxHash = Hash(txBytes)
 	return tx
 }
-func GenerateTxs(count uint32) []*Transaction {
-	result := make([]*Transaction, count)
-	for i := uint32(0); i < count; i++ {
-		tx := &Transaction{
-			Payload:   Uint32ToBytes(i),
-			Sender:    []byte{1},
-			Signature: nil,
-			TxHash:    nil,
-		}
-		txBytes, _ := tx.Marshal()
-		tx.Signature, _ = SignData(txBytes)
-		txBytes, _ = tx.Marshal()
-		tx.TxHash = Hash(txBytes)
-		result[i] = tx
+func GenerateTxs(count int) []*Transaction {
+
+	result := make([]*Transaction, 0)
+	wg := sync.WaitGroup{}
+	wg.Add(runtime.NumCPU())
+	for cpu := 0; cpu < runtime.NumCPU(); cpu++ {
+		go func(c int) {
+			defer wg.Done()
+			for i := 0; i < count/runtime.NumCPU(); i++ {
+				tx := &Transaction{
+					Payload:   Uint32ToBytes(uint32(i)),
+					Sender:    []byte{1},
+					Signature: nil,
+					TxHash:    nil,
+				}
+				txBytes, _ := tx.Marshal()
+				tx.Signature, _ = SignData(txBytes)
+				txBytes, _ = tx.Marshal()
+				tx.TxHash = Hash(txBytes)
+				result = append(result, tx)
+			}
+
+		}(cpu)
 	}
+	wg.Wait()
+
 	return result
 }
 
