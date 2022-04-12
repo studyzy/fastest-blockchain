@@ -15,6 +15,7 @@ import (
 )
 
 var TOTAL_TX = 1000000
+var VerifiedTx = 0
 
 func main() {
 	testCase2()
@@ -65,6 +66,7 @@ func testCase2() {
 		tx.Unmarshal(msg)
 		if VerifyTx(tx) == nil {
 			txPool.AddTx(tx)
+			VerifiedTx++
 		}
 	})
 	//客户端产生新交易并放入网络模块

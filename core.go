@@ -21,6 +21,7 @@ func (core *Core) GenerateBlock() {
 	var preHeight uint64
 	t := time.NewTicker(time.Second * 1)
 	start := time.Now()
+	firstBlockStart := time.Now()
 	go func() {
 		for {
 			<-t.C
@@ -28,7 +29,8 @@ func (core *Core) GenerateBlock() {
 			//从交易池获取未打包交易
 			txs := core.txpool.FetchTxs()
 			if len(txs) == 0 {
-				fmt.Printf("no tx in pool")
+				fmt.Printf("no tx in pool  cost: %v, TPS: %v\n", time.Since(firstBlockStart),
+					float64(TOTAL_TX)/time.Since(firstBlockStart).Seconds())
 				return
 			}
 			//产生新区块
@@ -44,7 +46,8 @@ func (core *Core) GenerateBlock() {
 		}
 	}()
 	for {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 1)
+		fmt.Printf("Verified tx count=%d\n", VerifiedTx)
 	}
 }
 
