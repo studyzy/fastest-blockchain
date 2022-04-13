@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"runtime"
 	"sync"
 	"testing"
@@ -18,29 +19,52 @@ var msg = "HelloWorld"
 var THREAD = runtime.NumCPU()
 var COUNT = 100000
 
+type DataAndSign struct {
+	Data []byte
+	Sign []byte
+}
+
 func TestP256(t *testing.T) {
-	h := sha256.Sum256([]byte(msg))
+
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.Nil(t, err)
 
-	sign, err := priv.Sign(rand.Reader, h[:], nil)
-	require.Nil(t, err)
-	require.NotEqual(t, nil, sign)
+	start := time.Now()
+	wg := sync.WaitGroup{}
+	wg.Add(THREAD)
+	txBatch := []*DataAndSign{}
+	lock := sync.Mutex{}
+	for cpu := 0; cpu < THREAD; cpu++ {
+		go func(c int) {
+			defer wg.Done()
+			for i := 0; i < COUNT; i++ {
+				hash := sha256.Sum256(Uint32ToBytes(uint32(c*COUNT + i)))
+				sign, _ := ecdsa.SignASN1(rand.Reader, priv, hash[:])
+				lock.Lock()
+				txBatch = append(txBatch, &DataAndSign{Data: Uint32ToBytes(uint32(c*COUNT + i)), Sign: sign})
+				lock.Unlock()
+			}
+		}(cpu)
+	}
+	wg.Wait()
+	t.Logf("total generate tx count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
+		float64(COUNT*THREAD)/time.Since(start).Seconds())
 
 	pub := &priv.PublicKey
 
-	wg := sync.WaitGroup{}
-	start := time.Now()
+	wg = sync.WaitGroup{}
+	start = time.Now()
 	wg.Add(THREAD)
 	for cpu := 0; cpu < THREAD; cpu++ {
 		go func(c int) {
 			defer wg.Done()
 
 			for i := 0; i < COUNT; i++ {
-				hash := sha256.Sum256([]byte(msg))
-				b := ecdsa.VerifyASN1(pub, hash[:], sign)
+				data := txBatch[c*COUNT+i]
+				hash := sha256.Sum256([]byte(data.Data))
+				b := ecdsa.VerifyASN1(pub, hash[:], data.Sign)
 				if !b {
-					t.Fatal()
+					t.Fatal(fmt.Sprintf("index=%d, data:%x,sign:%x", c*COUNT+i, data.Data, data.Sign))
 				}
 			}
 		}(cpu)
