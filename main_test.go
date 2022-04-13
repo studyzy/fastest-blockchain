@@ -27,10 +27,9 @@ func TestGenerateTxs(t *testing.T) {
 		go func(c int) {
 			defer wg.Done()
 			txs := txBatch[c]
-			//txs[0].Payload = []byte{123} //wrong data
 			for _, tx := range txs {
-				if err := VerifyTx(tx); err != nil {
-					t.Fatal(err.Error())
+				if err := VerifyTx(txs[0]); err != nil {
+					t.Fatal(tx.String())
 				}
 			}
 		}(cpu)
