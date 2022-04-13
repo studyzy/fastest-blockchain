@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var TOTAL_TX = 1000000
+var TOTAL_TX = 100000 * runtime.NumCPU()
 var VerifiedTx = 0
 
 func main() {
