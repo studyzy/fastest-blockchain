@@ -21,15 +21,17 @@ func TestGenerateTxs(t *testing.T) {
 	wg.Wait()
 	t.Logf("total generate tx count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
 		float64(COUNT*THREAD)/time.Since(start).Seconds())
-
+	start = time.Now()
 	wg.Add(THREAD)
 	for cpu := 0; cpu < THREAD; cpu++ {
 		go func(c int) {
 			defer wg.Done()
 			txs := txBatch[c]
 			//txs[0].Payload = []byte{123} //wrong data
-			if err := VerifyTxs(txs); err != nil {
-				t.Fatal(err.Error())
+			for _, tx := range txs {
+				if err := VerifyTx(tx); err != nil {
+					t.Fatal(err.Error())
+				}
 			}
 		}(cpu)
 	}
