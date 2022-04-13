@@ -15,7 +15,6 @@ import (
 )
 
 var TOTAL_TX = 100000 * runtime.NumCPU()
-var VerifiedTx = 0
 
 func main() {
 	testCase2()
@@ -72,17 +71,18 @@ func testCase2() {
 		txPool.AddTx(tx)
 		VerifiedTx++
 	})
+	go net.Start()
+	defer net.Stop()
 	//客户端产生新交易并放入网络模块
 	fmt.Println("Prepare tx...")
 	start := time.Now()
 	txs := GenerateTxs(TOTAL_TX)
 	fmt.Printf("Generated %d tx, spend:%v\n", len(txs), time.Since(start))
+	client := NewClient()
 	go func(txs []*Transaction) {
 		for i := 0; i < len(txs); i++ {
 			tx := txs[i]
-			//tx.Payload = []byte{0xee}
-			txMsg, _ := tx.Marshal()
-			go net.SendMessage(txMsg)
+			go client.SendTx(tx)
 		}
 	}(txs)
 	//产块节点核心引擎不断产生新区块
@@ -122,6 +122,7 @@ func GenerateTx(i int) *Transaction {
 func GenerateTxs(count int) []*Transaction {
 
 	result := make([]*Transaction, 0)
+	lock := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(runtime.NumCPU())
 	for cpu := 0; cpu < runtime.NumCPU(); cpu++ {
@@ -129,7 +130,9 @@ func GenerateTxs(count int) []*Transaction {
 			defer wg.Done()
 			for i := 0; i < count/runtime.NumCPU(); i++ {
 				tx := GenerateTx(i)
+				lock.Lock()
 				result = append(result, tx)
+				lock.Unlock()
 			}
 
 		}(cpu)

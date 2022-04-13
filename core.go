@@ -42,12 +42,13 @@ func (core *Core) GenerateBlock() {
 			preHash = newBlock.Header.BlockHash
 			fmt.Printf("Generate new block[%d] tx count= %d, cost: %v, TPS: %v\n", newBlock.Header.BlockHeight,
 				len(txs), time.Since(start), float64(len(txs))/time.Since(start).Seconds())
+			InBlockTxCount += len(txs)
 			start = time.Now()
 		}
 	}()
 	for {
 		time.Sleep(time.Second * 1)
-		fmt.Printf("Verified tx count=%d\n", VerifiedTx)
+		PrintMonitorMessage()
 	}
 }
 
