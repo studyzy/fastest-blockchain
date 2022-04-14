@@ -1,22 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"net"
 	"os"
+
+	"google.golang.org/grpc"
 )
 
 type Client struct {
-	conn net.Conn
+	client RpcServerClient
 }
 
 func NewClient() *Client {
-	conn, err := net.Dial("udp", NET_ADDRESS)
+	conn, err := grpc.Dial(NET_ADDRESS, grpc.WithInsecure())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	return &Client{conn: conn}
+	c := NewRpcServerClient(conn)
+	return &Client{client: c}
 }
 
 func checkError(err error) {
@@ -27,15 +30,13 @@ func checkError(err error) {
 }
 
 func (client *Client) SendTx(tx *Transaction) {
-	txMsg, _ := tx.Marshal()
-	_, err := client.conn.Write(txMsg)
 
-	checkError(err)
+	//通过句柄进行调用服务端函数SayHello
+	_, err := client.client.SendTx(context.Background(), tx)
+	if err != nil {
+		fmt.Println("calling SendTx() error", err)
+		return
+	}
 	ClientSendTxCount++
-	//msg := make([]byte, config.SERVER_RECV_LEN)
-	//n, err = conn.Read(msg)
-	//checkError(err)
-	//
-	//fmt.Println("Response:", string(msg))
-
+	//fmt.Println(re1.Message)
 }

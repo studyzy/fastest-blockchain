@@ -60,10 +60,9 @@ func testCase2() {
 	store := NewStore()
 	core := NewCore(txPool, store)
 	//不断产生新交易
-	net := NewNetwork(func(msg []byte) {
+	net := NewNetwork(func(tx *Transaction) {
 		//网络收到消息后反序列化出Tx，验证签名通过，并放入TxPool
-		tx := &Transaction{}
-		tx.Unmarshal(msg)
+
 		if err := VerifyTx(tx); err != nil {
 			fmt.Println("verify tx fail:" + err.Error())
 			return

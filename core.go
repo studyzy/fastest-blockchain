@@ -31,7 +31,7 @@ func (core *Core) GenerateBlock() {
 			if len(txs) == 0 {
 				fmt.Printf("no tx in pool  cost: %v, TPS: %v\n", time.Since(firstBlockStart),
 					float64(TOTAL_TX)/time.Since(firstBlockStart).Seconds())
-				return
+				continue
 			}
 			//产生新区块
 			newBlock := GenerateBlock(preHeight+1, preHash, txs)
