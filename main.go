@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -66,7 +67,8 @@ func testCase2() {
 			fmt.Println("verify tx fail:" + err.Error())
 			return
 		}
-		VerifiedTx++
+		atomic.AddUint32(&VerifiedTx, 1)
+		//VerifiedTx++
 		txPool.AddTx(tx)
 
 	})
