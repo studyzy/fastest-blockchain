@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"runtime"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,18 +16,20 @@ import (
 type server struct {
 }
 
+const TX_COUNT_PERCPU = 1000000
+
 var start time.Time
-var complete = false
+var wg sync.WaitGroup
 
 func (s server) SendTx(txServer RpcServer_SendTxServer) error {
 	start = time.Now()
 	for {
 		_, err := txServer.Recv()
 		if err != nil {
-			complete = true
+			wg.Done()
 			return err
 		}
-		ServerReceiveTxCount++
+		atomic.AddUint32(&ServerReceiveTxCount, 1)
 	}
 	return nil
 }
@@ -42,16 +47,20 @@ func TestGrpc(t *testing.T) {
 	RegisterRpcServerServer(srv, &server{})
 	go srv.Serve(listen)
 	time.Sleep(1 * time.Second)
-	go clientSendTx(t)
+	wg.Add(runtime.NumCPU())
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go clientSendTx(t)
+	}
 	ticker := time.NewTicker(time.Second)
 	for {
 		<-ticker.C
 		t.Logf("recevied:%d,cost:%v,TPS:%v",
 			ServerReceiveTxCount, time.Since(start), int(float64(ServerReceiveTxCount)/time.Since(start).Seconds()))
-		if complete {
+		if ServerReceiveTxCount == uint32(TX_COUNT_PERCPU*runtime.NumCPU()) {
 			return
 		}
 	}
+	wg.Wait()
 }
 func clientSendTx(t *testing.T) {
 	//init client
@@ -63,7 +72,7 @@ func clientSendTx(t *testing.T) {
 	c := NewRpcServerClient(conn)
 	sendClient, err := c.SendTx(context.Background())
 	sign := [73]byte{}
-	for i := 0; i < TOTAL_TX*10; i++ {
+	for i := 0; i < TX_COUNT_PERCPU; i++ {
 		err := sendClient.Send(&Transaction{
 			Payload:   Uint32ToBytes(uint32(i)),
 			Sender:    []byte{1},
