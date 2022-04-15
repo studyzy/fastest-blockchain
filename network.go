@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net"
 
@@ -13,11 +12,22 @@ type Network struct {
 	conn  net.Listener
 }
 
-func (n *Network) SendTx(ctx context.Context, tx *Transaction) (*SendTxResponse, error) {
-	ServerReceiveTxCount++
-	n.onRec(tx)
-	return &SendTxResponse{Message: "OK"}, nil
+func (n *Network) SendTx(server RpcServer_SendTxServer) error {
+	for {
+		tx, err := server.Recv()
+		checkError(err)
+		ServerReceiveTxCount++
+		go n.onRec(tx)
+
+	}
+	return nil
 }
+
+//func (n *Network) SendTx(ctx context.Context, tx *Transaction) (*SendTxResponse, error) {
+//	ServerReceiveTxCount++
+//	n.onRec(tx)
+//	return &SendTxResponse{Message: "OK"}, nil
+//}
 
 func NewNetwork(onRec func(transaction *Transaction)) *Network {
 	return &Network{onRec: onRec}
@@ -37,6 +47,7 @@ func (n *Network) Start() {
 	if err != nil {
 		fmt.Println("Serve error", err)
 	}
+
 	n.conn = listen
 }
 

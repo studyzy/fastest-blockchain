@@ -9,7 +9,7 @@ import (
 )
 
 type Client struct {
-	client RpcServerClient
+	client RpcServer_SendTxClient
 }
 
 func NewClient() *Client {
@@ -18,8 +18,12 @@ func NewClient() *Client {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	conn.Connect()
 	c := NewRpcServerClient(conn)
-	return &Client{client: c}
+
+	sendClient, err := c.SendTx(context.Background())
+	checkError(err)
+	return &Client{client: sendClient}
 }
 
 func checkError(err error) {
@@ -30,13 +34,18 @@ func checkError(err error) {
 }
 
 func (client *Client) SendTx(tx *Transaction) {
-
+	ClientSendTxCount++
 	//通过句柄进行调用服务端函数SayHello
-	_, err := client.client.SendTx(context.Background(), tx)
+	err := client.client.Send(tx)
 	if err != nil {
 		fmt.Println("calling SendTx() error", err)
 		return
 	}
-	ClientSendTxCount++
+	ClientSendSuccessTxCount++
 	//fmt.Println(re1.Message)
+}
+func (client *Client) Close() {
+	response, err := client.client.CloseAndRecv()
+	checkError(err)
+	fmt.Printf(response.Message)
 }

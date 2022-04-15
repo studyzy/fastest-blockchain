@@ -62,13 +62,13 @@ func testCase2() {
 	//不断产生新交易
 	net := NewNetwork(func(tx *Transaction) {
 		//网络收到消息后反序列化出Tx，验证签名通过，并放入TxPool
-
 		if err := VerifyTx(tx); err != nil {
 			fmt.Println("verify tx fail:" + err.Error())
 			return
 		}
-		txPool.AddTx(tx)
 		VerifiedTx++
+		txPool.AddTx(tx)
+
 	})
 	go net.Start()
 	defer net.Stop()
@@ -77,17 +77,16 @@ func testCase2() {
 	start := time.Now()
 	txs := GenerateTxs(TOTAL_TX)
 	fmt.Printf("Generated %d tx, spend:%v\n", len(txs), time.Since(start))
+
 	client := NewClient()
 	go func(txs []*Transaction) {
 		for i := 0; i < len(txs); i++ {
 			tx := txs[i]
-			go client.SendTx(tx)
+			client.SendTx(tx)
 		}
 	}(txs)
 	//产块节点核心引擎不断产生新区块
-
 	core.GenerateBlock()
-
 }
 
 func GenerateMemKey() error {

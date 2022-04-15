@@ -33,6 +33,7 @@ func (core *Core) GenerateBlock() {
 					float64(TOTAL_TX)/time.Since(firstBlockStart).Seconds())
 				continue
 			}
+
 			//产生新区块
 			newBlock := GenerateBlock(preHeight+1, preHash, txs)
 			//保存新区块
