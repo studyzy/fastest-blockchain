@@ -10,7 +10,7 @@ import (
 
 type Network struct {
 	onRec func(transaction *Transaction)
-	conn  net.Listener
+	srv   *grpc.Server
 }
 
 func (n *Network) SendTx(ctx context.Context, transaction *Transaction) (*SendTxResponse, error) {
@@ -48,16 +48,18 @@ func (n *Network) Start() {
 	}
 	//创建grpc服务
 	srv := grpc.NewServer()
+	n.srv = srv
 	//注册服务
 	RegisterRpcServerServer(srv, n)
-	err = srv.Serve(listen)
-	if err != nil {
-		fmt.Println("Serve error", err)
-	}
+	go func() {
+		err = srv.Serve(listen)
+		if err != nil {
+			fmt.Println("Serve error", err)
+		}
+	}()
 
-	n.conn = listen
 }
 
 func (n *Network) Stop() {
-	n.conn.Close()
+	n.srv.Stop()
 }

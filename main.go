@@ -68,7 +68,7 @@ func testCase2() {
 		txPool.AddTx(tx)
 
 	})
-	go net.Start()
+	net.Start()
 	defer net.Stop()
 	//客户端产生新交易并放入网络模块
 	fmt.Println("Prepare tx...")

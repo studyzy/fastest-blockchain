@@ -26,7 +26,7 @@ func (s server) SendTx(ctx context.Context, transaction *Transaction) (*SendTxRe
 	return &SendTxResponse{Message: "OK"}, nil
 }
 
-const TX_COUNT_PERCPU = 1000000
+const TX_COUNT_PERCPU = 100000
 
 var start time.Time
 var wg sync.WaitGroup
@@ -56,6 +56,7 @@ func TestGrpcStream(t *testing.T) {
 	}
 	//创建grpc服务
 	srv := grpc.NewServer()
+	defer srv.Stop()
 	//注册服务
 	RegisterRpcServerServer(srv, &server{})
 	go srv.Serve(listen)
@@ -69,9 +70,9 @@ func TestGrpcStream(t *testing.T) {
 	ticker := time.NewTicker(time.Second)
 	for {
 		<-ticker.C
-		t.Logf("send: %d ,recevied:%d,cost:%v,TPS:%v", ClientSendTxCount,
+		t.Logf("GRPC stream send: %d ,recevied:%d,cost:%v,TPS:%v", ClientSendTxCount,
 			ServerReceiveTxCount, time.Since(start), int(float64(ServerReceiveTxCount)/time.Since(start).Seconds()))
-		if ServerReceiveTxCount == uint32(TX_COUNT_PERCPU*runtime.NumCPU()) {
+		if ServerReceiveTxCount == uint32(TX_COUNT_PERCPU*runtime.NumCPU()*10) {
 			return
 		}
 	}
@@ -87,9 +88,9 @@ func clientSendTxStream(t *testing.T, cpuNumber int) {
 	c := NewRpcServerClient(conn)
 	sendClient, err := c.SendTxStream(context.Background())
 	sign := [73]byte{}
-	for i := 0; i < TX_COUNT_PERCPU; i++ {
+	for i := 0; i < TX_COUNT_PERCPU*10; i++ {
 		err := sendClient.Send(&Transaction{
-			Payload:   Uint32ToBytes(uint32(cpuNumber*TX_COUNT_PERCPU + i)),
+			Payload:   Uint32ToBytes(uint32(cpuNumber*TX_COUNT_PERCPU*10 + i)),
 			Sender:    []byte{1},
 			Signature: sign[:],
 			TxHash:    sign[0:32],
@@ -119,6 +120,7 @@ func TestGrpc(t *testing.T) {
 	//注册服务
 	RegisterRpcServerServer(srv, &server{})
 	go srv.Serve(listen)
+	defer srv.Stop()
 	time.Sleep(1 * time.Second)
 	start = time.Now()
 	wg.Add(runtime.NumCPU())
@@ -128,7 +130,7 @@ func TestGrpc(t *testing.T) {
 	ticker := time.NewTicker(time.Second)
 	for {
 		<-ticker.C
-		t.Logf("send:%d, recevied:%d,cost:%v,TPS:%v", ClientSendTxCount,
+		t.Logf("GRPC nostream send:%d, recevied:%d,cost:%v,TPS:%v", ClientSendTxCount,
 			ServerReceiveTxCount, time.Since(start), int(float64(ServerReceiveTxCount)/time.Since(start).Seconds()))
 		if ServerReceiveTxCount == uint32(TX_COUNT_PERCPU*runtime.NumCPU()) {
 			return

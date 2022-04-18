@@ -47,7 +47,7 @@ func TestP256(t *testing.T) {
 		}(cpu)
 	}
 	wg.Wait()
-	t.Logf("total generate tx count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
+	t.Logf("ECDSA total generate and sign tx count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
 		float64(COUNT*THREAD)/time.Since(start).Seconds())
 
 	pub := &priv.PublicKey
@@ -70,32 +70,11 @@ func TestP256(t *testing.T) {
 		}(cpu)
 	}
 	wg.Wait()
-	t.Logf("total verify tx count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
+	t.Logf("ECDSA total verify tx count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
 		float64(COUNT*THREAD)/time.Since(start).Seconds())
-
-	//start := time.Now()
-	//wg := sync.WaitGroup{}
-	//wg.Add(THREAD)
-	//
-	//for cpu := 0; cpu < THREAD; cpu++ {
-	//	go func(c int) {
-	//		defer wg.Done()
-	//		for i := 0; i < COUNT; i++ {
-	//			hash := sha256.Sum256([]byte(msg))
-	//			b := ecdsa.VerifyASN1(pub, hash[:], sign)
-	//			if !b {
-	//				t.Fail()
-	//			}
-	//		}
-	//		t.Logf("CPU[%d] verify count=%d, cost:%v", c, COUNT, time.Since(start))
-	//	}(cpu)
-	//}
-	//wg.Wait()
-	//t.Logf("total verify count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
-	//	float64(COUNT*THREAD)/time.Since(start).Seconds())
 }
 
-func TestEd25519Verification(t *testing.T) {
+func TestEd25519(t *testing.T) {
 	message := []byte(msg)
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -116,10 +95,10 @@ func TestEd25519Verification(t *testing.T) {
 					t.Fatal("Verify fail")
 				}
 			}
-			t.Logf("CPU[%d] verify count=%d, cost:%v", c, COUNT, time.Since(start))
+			//t.Logf("CPU[%d] verify count=%d, cost:%v", c, COUNT, time.Since(start))
 		}(cpu)
 	}
 	wg.Wait()
-	t.Logf("total verify count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
+	t.Logf("ED25519 total verify count=%d, cost:%v, TPS:%v", COUNT*THREAD, time.Since(start),
 		float64(COUNT*THREAD)/time.Since(start).Seconds())
 }

@@ -22,6 +22,7 @@ func (core *Core) GenerateBlock() {
 	t := time.NewTicker(time.Second * 1)
 	start := time.Now()
 	firstBlockStart := time.Now()
+	complete := false
 	go func() {
 		for {
 			<-t.C
@@ -31,7 +32,8 @@ func (core *Core) GenerateBlock() {
 			if len(txs) == 0 {
 				fmt.Printf("no tx in pool  cost: %v, TPS: %v\n", time.Since(firstBlockStart),
 					float64(TOTAL_TX)/time.Since(firstBlockStart).Seconds())
-				continue
+				complete = true
+				return
 			}
 
 			//产生新区块
@@ -48,13 +50,21 @@ func (core *Core) GenerateBlock() {
 		}
 	}()
 	for {
+
 		time.Sleep(time.Second * 1)
 		PrintMonitorMessage()
+		if complete {
+			fmt.Println("complete")
+			return
+		}
 	}
 }
 
 //GenerateBlock 根据一堆Txs和当前高度，上一区块Hash，生成新的区块
 func GenerateBlock(height uint64, preBlockHash []byte, txs []*Transaction) *Block {
+	for _, tx := range txs {
+		RunVM(tx)
+	}
 	header := &BlockHeader{
 		BlockHeight:    height,
 		BlockHash:      nil,

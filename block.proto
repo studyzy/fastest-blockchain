@@ -46,18 +46,24 @@ message BlockHeader {
     // signature of proposer
     bytes signature = 7;
 }
-
+enum TxType{
+    Evidence=0;
+    Token=1;
+    SmartContract=2;
+}
 // a transaction
 message Transaction {
+    //transaction type
+    TxType tx_type=1;
     // payload
-    bytes payload = 1;
+    bytes payload = 2;
 
     // sender account
-    bytes sender = 2;
+    bytes sender = 3;
 
     // signature of sender
-    bytes signature = 3;
+    bytes signature = 4;
 
     // tx hash
-    bytes tx_hash = 4;
+    bytes tx_hash = 5;
 }
