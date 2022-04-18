@@ -1,14 +1,10 @@
 package main
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/fs"
-	"io/ioutil"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -92,19 +88,20 @@ func testCase2() {
 }
 
 func GenerateMemKey() error {
-	priv, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	privateKey = priv
-	publicKey = &priv.PublicKey
+	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
+	privateKey = &priv
+	publicKey = &pub
 	return nil
 }
-func GenerateKeyFile() error {
-	priv, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	privateKey = priv
-	publicKey = &priv.PublicKey
-	privBytes, _ := x509.MarshalPKCS8PrivateKey(priv)
-	fmt.Printf("generate a new key:%x", privBytes)
-	return ioutil.WriteFile("key.key", privBytes, fs.ModePerm)
-}
+
+//func GenerateKeyFile() error {
+//	priv, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+//	privateKey = priv
+//	publicKey = &priv.PublicKey
+//	privBytes, _ := x509.MarshalPKCS8PrivateKey(priv)
+//	fmt.Printf("generate a new key:%x", privBytes)
+//	return ioutil.WriteFile("key.key", privBytes, fs.ModePerm)
+//}
 
 func GenerateTx(i int) *Transaction {
 	tx := &Transaction{

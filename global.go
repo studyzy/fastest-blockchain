@@ -1,8 +1,8 @@
 package main
 
 import (
-	"crypto/ecdsa"
+	"crypto/ed25519"
 )
 
-var privateKey *ecdsa.PrivateKey
-var publicKey *ecdsa.PublicKey
+var privateKey *ed25519.PrivateKey
+var publicKey *ed25519.PublicKey
