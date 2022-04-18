@@ -35,6 +35,7 @@ func (s server) SendTxStream(txServer RpcServer_SendTxStreamServer) error {
 	start = time.Now()
 	for {
 		_, err := txServer.Recv()
+
 		if err != nil {
 			wg.Done()
 			return err
@@ -60,9 +61,11 @@ func TestGrpcStream(t *testing.T) {
 	go srv.Serve(listen)
 	time.Sleep(1 * time.Second)
 	wg.Add(runtime.NumCPU())
+
 	for i := 0; i < runtime.NumCPU(); i++ {
-		go clientSendTxStream(t)
+		go clientSendTxStream(t, i)
 	}
+
 	ticker := time.NewTicker(time.Second)
 	for {
 		<-ticker.C
@@ -74,20 +77,19 @@ func TestGrpcStream(t *testing.T) {
 	}
 	wg.Wait()
 }
-func clientSendTxStream(t *testing.T) {
+func clientSendTxStream(t *testing.T, cpuNumber int) {
 	//init client
 	conn, err := grpc.Dial(NET_ADDRESS, grpc.WithInsecure())
 	if err != nil {
 		t.Fatal(err)
 	}
 	conn.Connect()
-	defer conn.Close()
 	c := NewRpcServerClient(conn)
 	sendClient, err := c.SendTxStream(context.Background())
 	sign := [73]byte{}
 	for i := 0; i < TX_COUNT_PERCPU; i++ {
 		err := sendClient.Send(&Transaction{
-			Payload:   Uint32ToBytes(uint32(i)),
+			Payload:   Uint32ToBytes(uint32(cpuNumber*TX_COUNT_PERCPU + i)),
 			Sender:    []byte{1},
 			Signature: sign[:],
 			TxHash:    sign[0:32],
@@ -142,7 +144,7 @@ func clientSendTx(t *testing.T) {
 		t.Fatal(err)
 	}
 	conn.Connect()
-	defer conn.Close()
+
 	c := NewRpcServerClient(conn)
 	sign := [73]byte{}
 	for i := 0; i < TX_COUNT_PERCPU; i++ {
