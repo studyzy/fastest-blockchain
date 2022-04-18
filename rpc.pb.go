@@ -78,18 +78,19 @@ func init() {
 func init() { proto.RegisterFile("rpc.proto", fileDescriptor_77a6da22d6a3feb1) }
 
 var fileDescriptor_77a6da22d6a3feb1 = []byte{
-	// 170 bytes of a gzipped FileDescriptorProto
+	// 184 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2c, 0x2a, 0x48, 0xd6,
 	0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0xc9, 0x4d, 0xcc, 0xcc, 0x93, 0xe2, 0x4e, 0xca, 0xc9,
 	0x4f, 0xce, 0x86, 0x08, 0x29, 0x69, 0x71, 0xf1, 0x05, 0xa7, 0xe6, 0xa5, 0x84, 0x54, 0x04, 0xa5,
 	0x16, 0x17, 0xe4, 0xe7, 0x15, 0xa7, 0x0a, 0x49, 0x70, 0xb1, 0xe7, 0xa6, 0x16, 0x17, 0x27, 0xa6,
-	0xa7, 0x4a, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0xc1, 0xb8, 0x46, 0x4e, 0x5c, 0x9c, 0x41, 0x05,
-	0xc9, 0xc1, 0xa9, 0x45, 0x65, 0xa9, 0x45, 0x42, 0xa6, 0x5c, 0x6c, 0x10, 0x8d, 0x42, 0x82, 0x7a,
-	0x20, 0x63, 0xf5, 0x42, 0x8a, 0x12, 0xf3, 0x8a, 0x13, 0x93, 0x4b, 0x32, 0xf3, 0xf3, 0xa4, 0x44,
-	0x20, 0x42, 0xa8, 0x26, 0x2b, 0x31, 0x68, 0x30, 0x3a, 0xc9, 0x9d, 0x78, 0x24, 0xc7, 0x78, 0xe1,
-	0x91, 0x1c, 0xe3, 0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78, 0x2c, 0xc7, 0x70,
-	0xe3, 0xb1, 0x1c, 0x43, 0x14, 0xd8, 0x71, 0x49, 0x6c, 0x60, 0x67, 0x19, 0x03, 0x02, 0x00, 0x00,
-	0xff, 0xff, 0x32, 0xd3, 0x3e, 0x4f, 0xb6, 0x00, 0x00, 0x00,
+	0xa7, 0x4a, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0xc1, 0xb8, 0x46, 0xb5, 0x5c, 0x9c, 0x41, 0x05,
+	0xc9, 0xc1, 0xa9, 0x45, 0x65, 0xa9, 0x45, 0x42, 0xd6, 0x5c, 0x3c, 0x10, 0x8d, 0xc1, 0x25, 0x45,
+	0xa9, 0x89, 0xb9, 0x42, 0x82, 0x7a, 0x20, 0xc3, 0xf5, 0x42, 0x8a, 0x12, 0xf3, 0x8a, 0x13, 0x93,
+	0x4b, 0x32, 0xf3, 0xf3, 0xa4, 0x44, 0x20, 0x42, 0xa8, 0xe6, 0x2b, 0x31, 0x68, 0x30, 0x0a, 0x19,
+	0x73, 0xb1, 0x41, 0x44, 0x49, 0xd0, 0xe6, 0x24, 0x77, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72,
+	0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0x4e, 0x78, 0x2c, 0xc7, 0x70, 0xe1, 0xb1, 0x1c, 0xc3, 0x8d, 0xc7,
+	0x72, 0x0c, 0x51, 0x60, 0x7f, 0x25, 0xb1, 0x81, 0x7d, 0x64, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff,
+	0x20, 0xfd, 0x23, 0x07, 0xf1, 0x00, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -104,8 +105,10 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RpcServerClient interface {
-	// Sends a transaction
-	SendTx(ctx context.Context, opts ...grpc.CallOption) (RpcServer_SendTxClient, error)
+	// Sends a transaction by stream
+	SendTxStream(ctx context.Context, opts ...grpc.CallOption) (RpcServer_SendTxStreamClient, error)
+	//Send one transaction
+	SendTx(ctx context.Context, in *Transaction, opts ...grpc.CallOption) (*SendTxResponse, error)
 }
 
 type rpcServerClient struct {
@@ -116,30 +119,30 @@ func NewRpcServerClient(cc *grpc.ClientConn) RpcServerClient {
 	return &rpcServerClient{cc}
 }
 
-func (c *rpcServerClient) SendTx(ctx context.Context, opts ...grpc.CallOption) (RpcServer_SendTxClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_RpcServer_serviceDesc.Streams[0], "/main.RpcServer/SendTx", opts...)
+func (c *rpcServerClient) SendTxStream(ctx context.Context, opts ...grpc.CallOption) (RpcServer_SendTxStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_RpcServer_serviceDesc.Streams[0], "/main.RpcServer/SendTxStream", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &rpcServerSendTxClient{stream}
+	x := &rpcServerSendTxStreamClient{stream}
 	return x, nil
 }
 
-type RpcServer_SendTxClient interface {
+type RpcServer_SendTxStreamClient interface {
 	Send(*Transaction) error
 	CloseAndRecv() (*SendTxResponse, error)
 	grpc.ClientStream
 }
 
-type rpcServerSendTxClient struct {
+type rpcServerSendTxStreamClient struct {
 	grpc.ClientStream
 }
 
-func (x *rpcServerSendTxClient) Send(m *Transaction) error {
+func (x *rpcServerSendTxStreamClient) Send(m *Transaction) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *rpcServerSendTxClient) CloseAndRecv() (*SendTxResponse, error) {
+func (x *rpcServerSendTxStreamClient) CloseAndRecv() (*SendTxResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -150,43 +153,57 @@ func (x *rpcServerSendTxClient) CloseAndRecv() (*SendTxResponse, error) {
 	return m, nil
 }
 
+func (c *rpcServerClient) SendTx(ctx context.Context, in *Transaction, opts ...grpc.CallOption) (*SendTxResponse, error) {
+	out := new(SendTxResponse)
+	err := c.cc.Invoke(ctx, "/main.RpcServer/SendTx", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RpcServerServer is the server API for RpcServer service.
 type RpcServerServer interface {
-	// Sends a transaction
-	SendTx(RpcServer_SendTxServer) error
+	// Sends a transaction by stream
+	SendTxStream(RpcServer_SendTxStreamServer) error
+	//Send one transaction
+	SendTx(context.Context, *Transaction) (*SendTxResponse, error)
 }
 
 // UnimplementedRpcServerServer can be embedded to have forward compatible implementations.
 type UnimplementedRpcServerServer struct {
 }
 
-func (*UnimplementedRpcServerServer) SendTx(srv RpcServer_SendTxServer) error {
-	return status.Errorf(codes.Unimplemented, "method SendTx not implemented")
+func (*UnimplementedRpcServerServer) SendTxStream(srv RpcServer_SendTxStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method SendTxStream not implemented")
+}
+func (*UnimplementedRpcServerServer) SendTx(ctx context.Context, req *Transaction) (*SendTxResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendTx not implemented")
 }
 
 func RegisterRpcServerServer(s *grpc.Server, srv RpcServerServer) {
 	s.RegisterService(&_RpcServer_serviceDesc, srv)
 }
 
-func _RpcServer_SendTx_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RpcServerServer).SendTx(&rpcServerSendTxServer{stream})
+func _RpcServer_SendTxStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RpcServerServer).SendTxStream(&rpcServerSendTxStreamServer{stream})
 }
 
-type RpcServer_SendTxServer interface {
+type RpcServer_SendTxStreamServer interface {
 	SendAndClose(*SendTxResponse) error
 	Recv() (*Transaction, error)
 	grpc.ServerStream
 }
 
-type rpcServerSendTxServer struct {
+type rpcServerSendTxStreamServer struct {
 	grpc.ServerStream
 }
 
-func (x *rpcServerSendTxServer) SendAndClose(m *SendTxResponse) error {
+func (x *rpcServerSendTxStreamServer) SendAndClose(m *SendTxResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *rpcServerSendTxServer) Recv() (*Transaction, error) {
+func (x *rpcServerSendTxStreamServer) Recv() (*Transaction, error) {
 	m := new(Transaction)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -194,14 +211,37 @@ func (x *rpcServerSendTxServer) Recv() (*Transaction, error) {
 	return m, nil
 }
 
+func _RpcServer_SendTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Transaction)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RpcServerServer).SendTx(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/main.RpcServer/SendTx",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RpcServerServer).SendTx(ctx, req.(*Transaction))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _RpcServer_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "main.RpcServer",
 	HandlerType: (*RpcServerServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendTx",
+			Handler:    _RpcServer_SendTx_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "SendTx",
-			Handler:       _RpcServer_SendTx_Handler,
+			StreamName:    "SendTxStream",
+			Handler:       _RpcServer_SendTxStream_Handler,
 			ClientStreams: true,
 		},
 	},

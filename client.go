@@ -9,7 +9,7 @@ import (
 )
 
 type Client struct {
-	client RpcServer_SendTxClient
+	client RpcServer_SendTxStreamClient
 }
 
 func NewClient() *Client {
@@ -21,7 +21,7 @@ func NewClient() *Client {
 	conn.Connect()
 	c := NewRpcServerClient(conn)
 
-	sendClient, err := c.SendTx(context.Background())
+	sendClient, err := c.SendTxStream(context.Background())
 	checkError(err)
 	return &Client{client: sendClient}
 }

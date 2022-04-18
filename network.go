@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -12,7 +13,13 @@ type Network struct {
 	conn  net.Listener
 }
 
-func (n *Network) SendTx(server RpcServer_SendTxServer) error {
+func (n *Network) SendTx(ctx context.Context, transaction *Transaction) (*SendTxResponse, error) {
+	ServerReceiveTxCount++
+	go n.onRec(transaction)
+	return nil, nil
+}
+
+func (n *Network) SendTxStream(server RpcServer_SendTxStreamServer) error {
 	for {
 		tx, err := server.Recv()
 		checkError(err)

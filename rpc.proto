@@ -16,8 +16,10 @@ import "block.proto";
 
 // The RPC Server service definition.
 service RpcServer {
-  // Sends a transaction
-  rpc SendTx (stream Transaction) returns (SendTxResponse) {}
+  // Sends a transaction by stream
+  rpc SendTxStream (stream Transaction) returns (SendTxResponse) {}
+  //Send one transaction
+  rpc SendTx (Transaction) returns (SendTxResponse) {}
 }
 
 
