@@ -11,5 +11,8 @@ Client使用SendTxStream进行流式发送，实测比SendTx快10多倍。
 ## 性能指标
 ### 硬件
 MacBook Pro M1芯片8核，16G内存，SSD硬盘，本地网络
+Server 64核，128G内存，SSD硬盘，本地网络
 ### 存证性能
-在存证模式下，TPS：66660
+在存证模式下，200字节的存证数据，1s产块间隔
+M1 TPS: 66660
+Server: 27W

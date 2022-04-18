@@ -13,7 +13,7 @@ type Client struct {
 }
 
 func NewClient() *Client {
-	conn, err := grpc.Dial(NET_ADDRESS, grpc.WithInsecure())
+	conn, err := grpc.Dial(MyClientConfig.RPCServerAddress, grpc.WithInsecure())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

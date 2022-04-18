@@ -41,7 +41,7 @@ func NewNetwork(onRec func(transaction *Transaction)) *Network {
 }
 
 func (n *Network) Start() {
-	listen, err := net.Listen("tcp", NET_ADDRESS)
+	listen, err := net.Listen("tcp", MyServerConfig.RPCServerAddress)
 	if err != nil {
 		fmt.Println("listen failed,err", err)
 		return

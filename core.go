@@ -19,7 +19,7 @@ func NewCore(txPool *TxPool, store *Store) *Core {
 func (core *Core) GenerateBlock() {
 	var preHash []byte
 	var preHeight uint64
-	t := time.NewTicker(time.Second * 1)
+	t := time.NewTicker(time.Millisecond * time.Duration(MyChainConfig.BlockInterval))
 	start := time.Now()
 	firstBlockStart := time.Now()
 	complete := false
@@ -30,6 +30,9 @@ func (core *Core) GenerateBlock() {
 			//从交易池获取未打包交易
 			txs := core.txpool.FetchTxs()
 			if len(txs) == 0 {
+				if preHeight == 0 {
+					continue
+				}
 				fmt.Printf("no tx in pool  cost: %v, TPS: %v\n", time.Since(firstBlockStart),
 					float64(TOTAL_TX)/time.Since(firstBlockStart).Seconds())
 				complete = true

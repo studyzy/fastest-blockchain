@@ -10,50 +10,10 @@ import (
 )
 
 var TOTAL_TX = 100000 * runtime.NumCPU()
-var PAYLOAD_SIZE = 200
-
-//多少个账号
-var ACCOUNT_COUNT = 100
-
-func main() {
-	testCase2()
-}
-
-//func testCase1() {
-//	GenerateMemKey()
-//
-//	txPool := NewTxPool()
-//
-//	store := NewStore()
-//	core := NewCore(txPool, store)
-//	//不断产生新交易
-//	net := NewNetwork(func(msg []byte) {
-//		//网络收到消息后反序列化出Tx，验证签名通过，并放入TxPool
-//		tx := &Transaction{}
-//		tx.Unmarshal(msg)
-//		if err := VerifyTx(tx); err != nil {
-//			fmt.Println(err.Error())
-//		}
-//		txPool.AddTx(tx)
-//	})
-//	//客户端不断产生新交易并放入网络模块
-//	go func() {
-//		for i := 0; i < TOTAL_TX; i++ {
-//			tx := GenerateTx(i)
-//			txMsg, _ := tx.Marshal()
-//			net.SendMessage(txMsg)
-//		}
-//	}()
-//	//产块节点核心引擎不断产生新区块
-//
-//	core.GenerateBlock()
-//
-//}
 
 var accountMgr = NewAccountMgr()
 
-//预先产生好所有的Tx并签名，然后以最快速度放入TxPool
-func testCase2() {
+func main() {
 	fmt.Println("generate keys...")
 	GenerateMemKey(accountMgr)
 
@@ -98,7 +58,7 @@ func testCase2() {
 
 func GenerateMemKey(a *AccountMgr) error {
 	consPrivateKey, consPublicKey = GenerateNewKey()
-	for i := 0; i < ACCOUNT_COUNT; i++ {
+	for i := 0; i < MyClientConfig.AccountCount; i++ {
 		priv, pub := GenerateNewKey()
 		a.AddNewAccount(IntToBytes(i), priv, pub)
 	}
@@ -115,9 +75,9 @@ func GenerateMemKey(a *AccountMgr) error {
 //}
 
 func GenerateTx(i int) *Transaction {
-	accountId := IntToBytes(i % ACCOUNT_COUNT)
+	accountId := IntToBytes(i % MyClientConfig.AccountCount)
 	tx := &Transaction{
-		Payload:   GenPayload(uint32(i), PAYLOAD_SIZE),
+		Payload:   GenPayload(uint32(i), MyClientConfig.PayloadSize),
 		Sender:    accountId,
 		Signature: nil,
 		TxHash:    nil,
