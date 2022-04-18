@@ -1,8 +1,7 @@
 package main
 
-import (
-	"crypto/ed25519"
-)
+//共识节点的私钥
+var consPrivateKey *PrivKey
 
-var privateKey *ed25519.PrivateKey
-var publicKey *ed25519.PublicKey
+//共识节点的公钥
+var consPublicKey *PubKey

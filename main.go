@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/ed25519"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"runtime"
@@ -12,6 +10,10 @@ import (
 )
 
 var TOTAL_TX = 100000 * runtime.NumCPU()
+var PAYLOAD_SIZE = 200
+
+//多少个账号
+var ACCOUNT_COUNT = 100
 
 func main() {
 	testCase2()
@@ -48,9 +50,12 @@ func main() {
 //
 //}
 
+var accountMgr = NewAccountMgr()
+
 //预先产生好所有的Tx并签名，然后以最快速度放入TxPool
 func testCase2() {
-	GenerateMemKey()
+	fmt.Println("generate keys...")
+	GenerateMemKey(accountMgr)
 
 	txPool := NewTxPool()
 
@@ -64,7 +69,11 @@ func testCase2() {
 			return
 		}
 		atomic.AddUint32(&VerifiedTx, 1)
-		//VerifiedTx++
+		//判断Tx是否与账本中的重复
+		if store.TxExist(tx.TxHash) {
+			fmt.Printf("tx[%x] already exist in store", tx.TxHash)
+			return
+		}
 		txPool.AddTx(tx)
 
 	})
@@ -87,10 +96,12 @@ func testCase2() {
 	core.GenerateBlock()
 }
 
-func GenerateMemKey() error {
-	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
-	privateKey = &priv
-	publicKey = &pub
+func GenerateMemKey(a *AccountMgr) error {
+	consPrivateKey, consPublicKey = GenerateNewKey()
+	for i := 0; i < ACCOUNT_COUNT; i++ {
+		priv, pub := GenerateNewKey()
+		a.AddNewAccount(IntToBytes(i), priv, pub)
+	}
 	return nil
 }
 
@@ -104,14 +115,16 @@ func GenerateMemKey() error {
 //}
 
 func GenerateTx(i int) *Transaction {
+	accountId := IntToBytes(i % ACCOUNT_COUNT)
 	tx := &Transaction{
-		Payload:   Uint32ToBytes(uint32(i)),
-		Sender:    []byte{1},
+		Payload:   GenPayload(uint32(i), PAYLOAD_SIZE),
+		Sender:    accountId,
 		Signature: nil,
 		TxHash:    nil,
 	}
+	privKey, _ := accountMgr.GetAccountPrivKey(accountId)
 	txBytes, _ := tx.Marshal()
-	tx.Signature, _ = SignData(txBytes)
+	tx.Signature, _ = privKey.SignData(txBytes)
 	txBytes, _ = tx.Marshal()
 	tx.TxHash = Hash(txBytes)
 	return tx
@@ -122,11 +135,12 @@ func GenerateTxs(count int) []*Transaction {
 	lock := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(runtime.NumCPU())
+	countPerCPU := count / runtime.NumCPU()
 	for cpu := 0; cpu < runtime.NumCPU(); cpu++ {
 		go func(c int) {
 			defer wg.Done()
-			for i := 0; i < count/runtime.NumCPU(); i++ {
-				tx := GenerateTx(i)
+			for i := 0; i < countPerCPU; i++ {
+				tx := GenerateTx(c*countPerCPU + i)
 				lock.Lock()
 				result = append(result, tx)
 				lock.Unlock()
@@ -147,7 +161,11 @@ func VerifyTx(tx *Transaction) error {
 		TxHash:    nil,
 	}
 	txBytes, _ := tx2.Marshal()
-	if !VerifySignature(txBytes, tx.Signature) {
+	pub, err := accountMgr.GetAccountPubKey(tx.Sender)
+	if err != nil {
+		return err
+	}
+	if !pub.VerifySignature(txBytes, tx.Signature) {
 		return errors.New("verify fail")
 	}
 	return nil

@@ -43,8 +43,9 @@ func (core *Core) GenerateBlock() {
 			//更新变量
 			preHeight++
 			preHash = newBlock.Header.BlockHash
-			fmt.Printf("Generate new block[%d] tx count= %d, cost: %v, TPS: %v\n", newBlock.Header.BlockHeight,
-				len(txs), time.Since(start), float64(len(txs))/time.Since(start).Seconds())
+			newBlockBytes, _ := newBlock.Marshal()
+			fmt.Printf("Generate new block[%d] size=%d tx count= %d, cost: %v, TPS: %v\n", newBlock.Header.BlockHeight,
+				len(newBlockBytes), len(txs), time.Since(start), float64(len(txs))/time.Since(start).Seconds())
 			InBlockTxCount += uint32(len(txs))
 			start = time.Now()
 		}
@@ -75,7 +76,7 @@ func GenerateBlock(height uint64, preBlockHash []byte, txs []*Transaction) *Bloc
 		Signature:      nil,
 	}
 	headerBytes, _ := header.Marshal()
-	header.Signature, _ = SignData(headerBytes)
+	header.Signature, _ = consPrivateKey.SignData(headerBytes)
 	headerBytes, _ = header.Marshal()
 	header.BlockHash = Hash(headerBytes)
 	return &Block{
